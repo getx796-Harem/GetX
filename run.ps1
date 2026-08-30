@@ -44,7 +44,7 @@ $uaPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist"
 Get-ChildItem -Path $uaPath | Get-ChildItem | Get-ChildItem | Where-Object { $_.Name -like "*$fileName*" } | Remove-Item -Force -ErrorAction SilentlyContinue
 
 # ลบ Prefetch (เฉพาะไฟล์ที่เกี่ยวกับโปรแกรมนี้)
-Get-ChildItem -Path "$env:SystemRoot\Prefetch" -Filter "*DESUS.PANEL*" | Remove-Item -Force -ErrorAction SilentlyContinue
+Get-ChildItem -Path "$env:SystemRoot\Prefetch" -Filter "*reset.inputlag*" | Remove-Item -Force -ErrorAction SilentlyContinue
 
 # เริ่ม Explorer ใหม่เพื่อให้ระบบ Refresh
 Start-Process Explorer
