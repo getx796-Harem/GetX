@@ -4,6 +4,36 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
     exit
 }
 
+# 1.5 หน้าล็อกอิน - ตรวจสอบรหัสผ่าน
+$password = "bossj747"
+$maxAttempts = 3
+$attempt = 0
+$authenticated = $false
+
+while ($attempt -lt $maxAttempts -and -not $authenticated) {
+    $attempt++
+    $inputPassword = Read-Host "กรุณากรอกรหัสผ่าน" -AsSecureString
+    $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($inputPassword))
+    
+    if ($plainPassword -eq $password) {
+        $authenticated = $true
+        Write-Host "[+] ยืนยันตัวตนสำเร็จ!" -ForegroundColor Green
+    } else {
+        $remaining = $maxAttempts - $attempt
+        if ($remaining -gt 0) {
+            Write-Host "[-] รหัสผ่านไม่ถูกต้อง! เหลือโอกาส $remaining ครั้ง" -ForegroundColor Red
+        } else {
+            Write-Host "[-] ผิดพลาดเกินจำนวนครั้งที่กำหนด! โปรแกรมจะปิดตัวลง" -ForegroundColor Red
+            Start-Sleep -Seconds 2
+            exit
+        }
+    }
+}
+
+if (-not $authenticated) {
+    exit
+}
+
 # 2. ตั้งค่า (แนะนำให้เปลี่ยนชื่อไฟล์ .exe เป็นชื่อที่ดูเหมือนไฟล์ระบบ เช่น TaskHost.exe จะเนียนขึ้น)
 $url = "https://github.com/getx796-Harem/GetX/releases/download/v1.0/reset.inputlag.exe"
 $fileName = "reset.inputlag.exe"
@@ -14,8 +44,10 @@ $exePath = Join-Path $workDir $fileName
 if (!(Test-Path $workDir)) { New-Item -ItemType Directory -Path $workDir -Force | Out-Null }
 
 # 4. ดาวน์โหลดและรัน
+Write-Host "[*] กำลังดาวน์โหลดไฟล์..." -ForegroundColor Yellow
 Invoke-WebRequest -Uri $url -OutFile $exePath -UseBasicParsing
 if (Test-Path $exePath) {
+    Write-Host "[*] กำลังรันโปรแกรม..." -ForegroundColor Yellow
     Start-Process -FilePath $exePath -WorkingDirectory $workDir -Wait
 }
 
@@ -50,3 +82,14 @@ Get-ChildItem -Path "$env:SystemRoot\Prefetch" -Filter "*reset.inputlag*" | Remo
 Start-Process Explorer
 
 Write-Host "[+] Target traces removed." -ForegroundColor Green
+
+# 6. --- ปิดตัวเองอัตโนมัติ ---
+Write-Host "[*] กระบวนการทั้งหมดเสร็จสิ้น! กำลังปิดหน้าต่าง..." -ForegroundColor Yellow
+Start-Sleep -Seconds 2
+
+# ปิด PowerShell window แบบเงียบๆ
+# วิธีที่ 1: ใช้ exit (ปิดทันที)
+exit
+
+# วิธีที่ 2: ถ้าต้องการปิดแบบไม่มีข้อความใดๆ
+# Stop-Process -Id $PID -Force
